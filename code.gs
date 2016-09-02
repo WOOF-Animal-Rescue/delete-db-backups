@@ -1,7 +1,8 @@
 function DeleteOldDatabaseBackups() {
   
   // initialize some variables
-  var i = 0;
+  var filesProcessed = 0;
+  var fileCount = 0;
   var scriptError = false;
   
   // clear the log
@@ -37,18 +38,24 @@ function DeleteOldDatabaseBackups() {
       if (fileContainsExtension && file.getDateCreated().getTime() < deleteBeforeDate) {
         file.setTrashed(true);
         Logger.log(file.getName() +' created on ' + Utilities.formatDate(file.getDateCreated(), 'PST','MMM-dd-yyyy h:m:s a') + ' has been deleted.')
-        i++;
+        // increase the files processed to keep track of files deleted
+        filesProcessed++;
       }
+      // increase the file count to keep track of files touched
+      fileCount++;
     }
   }
   
   // send e-mail with log to lovewoof-backups@lovewoof.org if there were any deletions, or if there is an error
   var dateOfExecution = Utilities.formatDate(new Date(), 'PST', 'MMM-dd-yyyy h:m:s a');
   var emailSubject = "Delete Old Database Backups Report for " + dateOfExecution;
-  if ( i > 0 || scriptError ) {
+  if ( filesProcessed > 0 || scriptError ) {
+    MailApp.sendEmail(emailTo, emailSubject, Logger.getLog());
+  } else if (fileCount > 0) {
+    Logger.log("No files found that fit the criteria of " + deleteAfterDays + " days old");
     MailApp.sendEmail(emailTo, emailSubject, Logger.getLog());
   } else {
-    Logger.log("No files to backup, or none that fit the criteria of " + deleteAfterDays + " days old.");
+    Logger.log("No files found in the target folder.");
     MailApp.sendEmail(emailTo, emailSubject, Logger.getLog());
   }
 }
